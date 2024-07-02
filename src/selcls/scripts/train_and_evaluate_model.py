@@ -1,7 +1,7 @@
 
 
 from typing import Literal
-from ..model import resnet18
+from ..models import ResNet18, ResNet50
 from ..dataset.cifar import get_loader as get_cifar_loader
 from ..metrics import calc_metrics
 
@@ -23,7 +23,9 @@ def main(
         "num_classes": num_classes
     }
     if model == 'resnet18':
-        model = resnet18.ResNet18(**model_dict).cuda()
+        model = ResNet18(**model_dict).cuda()
+    elif model == 'resnet50':
+        model = ResNet50(**model_dict).cuda() 
     else:
         raise NotImplementedError(f"Model {model} not implemented")
     

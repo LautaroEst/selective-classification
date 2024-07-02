@@ -1,0 +1,1 @@
+from .resnet18_50 import ResNet18, ResNet50
