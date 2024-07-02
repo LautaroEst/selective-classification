@@ -2,6 +2,7 @@
 *.egg-info/
 /.vscode/
 
+/data/
 /outputs/
 /logs/
 /*.old/
