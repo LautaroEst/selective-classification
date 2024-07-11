@@ -1,1 +1,2 @@
-from .resnet18_50 import ResNet18, ResNet50
+from .desenet import DenseNet121Small
+from .resnet import ResNet34
