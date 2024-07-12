@@ -79,7 +79,7 @@ class ResNet(nn.Module):
     num_blocks = [2, 2, 2, 2]
 
     def __init__(self, num_classes=10):
-        super(ResNet, self).__init__()
+        super().__init__()
         self.in_planes = 64
 
         if self.block == "BasicBlock":
@@ -119,20 +119,20 @@ class ResNet(nn.Module):
 
 class ResNet18(ResNet):
     block = "BasicBlock"
-    nblocks = [2, 2, 2, 2]
+    num_blocks = [2, 2, 2, 2]
 
 class ResNet34(ResNet):
     block = "BasicBlock"
-    nblocks = [3, 4, 6, 3]
+    num_blocks = [3, 4, 6, 3]
 
 class ResNet50(ResNet):
     block = "Bottleneck"
-    nblocks = [3, 4, 6, 3]
+    num_blocks = [3, 4, 6, 3]
 
 class ResNet101(ResNet):
     block = "Bottleneck"
-    nblocks = [3, 4, 23, 3]
+    num_blocks = [3, 4, 23, 3]
 
 class ResNet152(ResNet):
     block = "Bottleneck"
-    nblocks = [3, 8, 36, 3]
+    num_blocks = [3, 8, 36, 3]

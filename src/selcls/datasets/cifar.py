@@ -35,14 +35,14 @@ class CIFAR10(_CIFAR10):
         "regmixup": ((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
     }
 
-    def __init__(self, root: str, split = "train", method = "ce", download: bool = False):
+    def __init__(self, root: str, split = "train", train_method = "ce", download: bool = False):
         if split == "train":
             train = True
         elif split == "test":
             train = False
         else:
             raise ValueError(f"split must be 'train' or 'test', got {split}")
-        transform = get_transforms(self.statistics[method], split)
+        transform = get_transforms(self.statistics[train_method], split)
         super().__init__(root, train=train, transform=transform, target_transform=None, download=download)
 
 
@@ -56,12 +56,12 @@ class CIFAR100(_CIFAR100):
         "regmixup": ((0.4914, 0.482158, 0.446531), (0.247032, 0.243486, 0.261588)),
     }
 
-    def __init__(self, root: str, split = "train", method = "ce", download: bool = False):
+    def __init__(self, root: str, split = "train", train_method = "ce", download: bool = False):
         if split == "train":
             train = True
         elif split == "test":
             train = False
         else:
             raise ValueError(f"split must be 'train' or 'test', got {split}")
-        transform = get_transforms(self.statistics[method], split)
+        transform = get_transforms(self.statistics[train_method], split)
         super().__init__(root, train=train, transform=transform, target_transform=None, download=download)
