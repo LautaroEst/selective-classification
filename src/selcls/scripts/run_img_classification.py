@@ -1,18 +1,17 @@
-
-import numpy as np
-import torch
-from torch.utils.data import DataLoader
-
-import pandas as pd
 from pathlib import Path
 from typing import Literal
+from tqdm import tqdm
+
+import torch
+from torch.utils.data import DataLoader
+import pandas as pd
+import numpy as np
+
 from ..models import DenseNet121Small, ResNet34
 from ..datasets import CIFAR10, CIFAR100
 
-from tqdm import tqdm
 
-
-def load_model(model: str, dataset: str, train_method: str, checkpoints_dir: str, seed: int):
+def load_img_classification_model(model: str, dataset: str, train_method: str, checkpoints_dir: str, seed: int):
 
     checkpoint_path = Path(checkpoints_dir) / train_method / f"{model}_{dataset}" / str(seed)
     if (checkpoint_path / "best.pth").exists():
@@ -45,7 +44,7 @@ def load_model(model: str, dataset: str, train_method: str, checkpoints_dir: str
     return model
     
     
-def load_dataset(dataset: str, train_method: str, data_dir: str):
+def load_cifar_dataset(dataset: str, train_method: str, data_dir: str):
     if dataset == "cifar10":
         dataset = CIFAR10(data_dir, split="test", train_method=train_method, download=True)
     elif dataset == "cifar100":
@@ -53,27 +52,39 @@ def load_dataset(dataset: str, train_method: str, data_dir: str):
     return dataset
 
 
-@torch.inference_mode()
-def run_model_on_dataset(model, dataset, batch_size=128, device="cuda:0"):
+def run_model_on_dataset(model, dataset, input_perturbation, temperature, batch_size=128, device="cuda:0"):
     model.eval()
+    for param in model.parameters():
+        param.requires_grad_(False)
+        
     device = torch.device(device)
     model = model.to(device)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
     logits, targets = [], []
     for x, y in tqdm(dataloader, total=len(dataloader)):
         x, y = x.to(device), y.to(device)
-        y_pred = model(x)
+        if input_perturbation > 0.0:
+            x.requires_grad_(True)
+            batch_logits = model(x)
+            if temperature != 1.0:
+                batch_logits /= temperature
+            
+
+            
+            x_perturbed = x + input_perturbation * torch.sign()
         logits.append(y_pred.cpu())
         targets.append(y.cpu())
     logits = torch.cat(logits, dim=0).numpy().astype(float)
     targets = torch.cat(targets, dim=0).numpy().astype(int)
     return logits, targets
-        
+
 
 def main(
     model: Literal["densenet121", "resnet34"],
     dataset: Literal["cifar10", "cifar100"],
     train_method: Literal["ce", "logit_norm", "mixup", "openmix", "regmixup"],
+    input_perturbation: float = 0.0,
+    temperature: float = 1.0,
     data_dir: str = "data",
     checkpoints_dir: str = "checkpoints",
     seed: int = 0,
@@ -83,18 +94,18 @@ def main(
 ):
 
     # Load model and dataset    
-    model = load_model(model, dataset, train_method, checkpoints_dir, seed)
-    dataset = load_dataset(dataset, train_method, data_dir)
+    model = load_img_classification_model(model, dataset, train_method, checkpoints_dir, seed)
+    dataset = load_cifar_dataset(dataset, train_method, data_dir)
 
     # Run model on dataset
-    logits, targets = run_model_on_dataset(model, dataset, batch_size, device)
+    logits, targets = run_model_on_dataset(model, dataset, input_perturbation, temperature, batch_size, device)
     if train_method == "openmix":
         logits = logits[:, :-1]
     outputs = pd.DataFrame(logits, columns=dataset.classes, index=np.arange(len(dataset)))
     outputs["target"] = targets
     outputs.to_csv(output, index=True, header=True)
 
-    
+
 if __name__ == "__main__":
     from fire import Fire
     Fire(main)
