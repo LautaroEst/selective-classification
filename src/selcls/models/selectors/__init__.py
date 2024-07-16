@@ -1,6 +1,4 @@
-from .msp import MSPSelector
+from .basics import MSPSelector, ODINSelector, DoctorSelector
 from .entropy import EntropySelector
-from .cal import MSPTSSelector, MSPDPSelector
-from .odin import ODINSelector
-from .doctor import DoctorSelector
+from .cal import MSPCalSelector
 from .relu import RelUSelector

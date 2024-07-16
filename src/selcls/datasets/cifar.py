@@ -65,3 +65,11 @@ class CIFAR100(_CIFAR100):
             raise ValueError(f"split must be 'train' or 'test', got {split}")
         transform = get_transforms(self.statistics[train_method], split)
         super().__init__(root, train=train, transform=transform, target_transform=None, download=download)
+
+
+def load_cifar_dataset(dataset: str, train_method: str, data_dir: str):
+    if dataset == "cifar10":
+        dataset = CIFAR10(data_dir, split="test", train_method=train_method, download=True)
+    elif dataset == "cifar100":
+        dataset = CIFAR100(data_dir, split="test", train_method=train_method, download=True)
+    return dataset
