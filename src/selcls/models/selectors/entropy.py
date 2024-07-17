@@ -5,6 +5,7 @@ from .base import BaseSelector
 class EntropySelector(BaseSelector):
 
     def __init__(self, n_classes, random_state = None):
+        super().__init__()
         self.n_classes = n_classes
         self.random_state = random_state
 

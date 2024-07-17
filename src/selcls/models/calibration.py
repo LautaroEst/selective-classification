@@ -13,9 +13,7 @@ class BaseCalibrator(nn.Module):
         self.tol = tol
     
     def calibrate(self, logprobs):
-        self.eval()
-        with torch.no_grad():
-            cal_logprobs = self(logprobs)
+        cal_logprobs = self(logprobs)
         return cal_logprobs
     
     def fit(self, logprobs, labels):

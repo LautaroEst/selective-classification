@@ -93,9 +93,9 @@ def main(
     else:
         logits, targets = torch.from_numpy(logits.values).float(), torch.from_numpy(targets.values.flatten()).long()
     
+    # Compute the scores with perturbed logits
     with torch.inference_mode():
         scores = selector.compute_score(logits / temperature)
-
 
     # Save results
     output_dir = Path(output_dir)

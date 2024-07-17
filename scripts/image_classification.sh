@@ -39,7 +39,8 @@ done
 
 perturbations=(0.0 0.001 0.004)
 temperatures=(1.0 0.5 2.0)
-scores=("msp" "entropy" "gini" "relu" "mspcal-ts" "mspcal-dp")
+# scores=("msp" "entropy" "gini" "relu" "mspcal-ts" "mspcal-dp")
+scores=("mspcal-dp")
 lbd=0.5
 train_list="train"
 

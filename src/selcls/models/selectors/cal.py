@@ -8,7 +8,7 @@ from .base import BaseSelector
 class MSPCalSelector(BaseSelector):
 
     def __init__(self, calibration: Literal["ts", "dp"] = "dp", n_classes: int = 10, random_state = None, **kwargs):
-        
+        super().__init__()
         if calibration == "ts":
             self.calibrator = TSCalibrator(n_classes, **kwargs)
         elif calibration == "dp":
