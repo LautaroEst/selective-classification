@@ -15,15 +15,17 @@ def run_model_on_dataset(model, dataset, batch_size=128, device="cuda:0"):
     device = torch.device(device)
     model = model.to(device)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
-    logits, targets = [], []
-    for x, y in tqdm(dataloader, total=len(dataloader)):
+    indices, logits, targets = [], [], []
+    for idx, x, y in tqdm(dataloader, total=len(dataloader)):
         x, y = x.to(device), y.to(device)
         batch_logits = model(x)
         logits.append(batch_logits.cpu())
         targets.append(y.cpu())
+        indices.append(idx.cpu())
     logits = torch.cat(logits, dim=0).numpy().astype(float)
     targets = torch.cat(targets, dim=0).numpy().astype(int)
-    return logits, targets
+    indices = torch.cat(indices, dim=0).numpy().astype(int)
+    return indices, logits, targets
 
 
 def main(
@@ -44,14 +46,14 @@ def main(
     dataset = load_cifar_dataset(dataset, train_method, data_dir)
 
     # Run model on dataset
-    logits, targets = run_model_on_dataset(model, dataset, batch_size, device)
+    indices, logits, targets = run_model_on_dataset(model, dataset, batch_size, device)
     if train_method == "openmix":
         logits = logits[:, :-1]
 
     # Save results
-    logits = pd.DataFrame(logits, columns=dataset.classes, index=np.arange(len(dataset)))
+    logits = pd.DataFrame(logits, columns=dataset.classes, index=indices)
     logits.to_csv(logits_output, index=True, header=True)
-    targets = pd.DataFrame(targets, columns=["target"], index=np.arange(len(dataset)))
+    targets = pd.DataFrame(targets, columns=["target"], index=indices)
     targets.to_csv(targets_output, index=True, header=True)
     
 

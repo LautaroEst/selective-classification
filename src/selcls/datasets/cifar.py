@@ -45,6 +45,10 @@ class CIFAR10(_CIFAR10):
         transform = get_transforms(self.statistics[train_method], split)
         super().__init__(root, train=train, transform=transform, target_transform=None, download=download)
 
+    def __getitem__(self, idx):
+        x, y = super().__getitem__(idx)
+        return idx, x, y
+
 
 class CIFAR100(_CIFAR100):
 
@@ -65,6 +69,10 @@ class CIFAR100(_CIFAR100):
             raise ValueError(f"split must be 'train' or 'test', got {split}")
         transform = get_transforms(self.statistics[train_method], split)
         super().__init__(root, train=train, transform=transform, target_transform=None, download=download)
+
+    def __getitem__(self, idx):
+        x, y = super().__getitem__(idx)
+        return idx, x, y
 
 
 def load_cifar_dataset(dataset: str, train_method: str, data_dir: str):

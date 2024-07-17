@@ -40,16 +40,23 @@ done
 perturbations=(0.0 0.001 0.004)
 temperatures=(1.0 0.5 2.0)
 scores=("msp" "entropy" "gini" "relu" "mspcal-ts" "mspcal-dp")
-lbd=0.5
 train_list="train"
+
+lbd=0.5
+cal_kwargs="--lr 0.1 --max_ls 100 --max_epochs 100 --tol 1e-6"
 
 for eps in ${perturbations[@]}; do
     for temp in ${temperatures[@]}; do
         for score in ${scores[@]}; do
             if [ $score == "relu" ]; then
                 kwargs="--lbd $lbd"
+                kwargs_short="lbd$lbd"
+            elif [ $score == "mspcal-ts" ] || [ $score == "mspcal-dp" ]; then
+                kwargs=$cal_kwargs
+                kwargs_short="default"
             else
                 kwargs=""
+                kwargs_short="none"
             fi
             for dataset in ${datasets[@]}; do
                 for model in ${models[@]}; do
@@ -57,7 +64,7 @@ for eps in ${perturbations[@]}; do
                         for dir in $checkpoints_dir/$train_method/${model}_${dataset}/*; do
                             seed=$(basename $dir)
                             posteriors_dir="outputs/img_classification/$dataset/$model/$train_method/seed=$seed"
-                            output_dir="$posteriors_dir/eps=$eps/temp=$temp/score=$score/train_list=$train_list"
+                            output_dir="$posteriors_dir/eps=$eps/temp=$temp/score=$score/train_list=$train_list/hparams=$kwargs_short"
                             if [ ! -f $output_dir/logits.csv ]; then
                                 mkdir -p $output_dir
                                 python -m selcls.scripts.img_classification.selection_scores \

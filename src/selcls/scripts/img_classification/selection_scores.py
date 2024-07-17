@@ -22,8 +22,8 @@ def run_model_on_dataset(model, dataset, selector, input_perturbation, temperatu
     model = model.to(device)
     selector = selector.to(device)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
-    logits, targets = [], []
-    for x, y in tqdm(dataloader, total=len(dataloader)):
+    indices, logits, targets = [], [], []
+    for idx, x, y in tqdm(dataloader, total=len(dataloader)):
         x, y = x.to(device), y.to(device)
         x.requires_grad_(True)
         batch_logits = model(x)
@@ -35,11 +35,13 @@ def run_model_on_dataset(model, dataset, selector, input_perturbation, temperatu
             batch_logits = model(x)
         logits.append(batch_logits.cpu())
         targets.append(y.cpu())
+        indices.append(idx.cpu())
     logits = torch.cat(logits, dim=0)
     targets = torch.cat(targets, dim=0)
+    indices = torch.cat(indices, dim=0).numpy().astype(int)
     model = model.cpu()
     selector = selector.cpu()
-    return logits, targets
+    return indices, logits, targets
 
 
 def main(
@@ -62,10 +64,10 @@ def main(
 ):
     # Load train data and train the selector
     train_idx = pd.read_csv(train_list, header=None).values.flatten()
-    logits = pd.read_csv(logits, index_col=0, header=0)
-    targets = pd.read_csv(targets, index_col=0, header=0)
-    train_logits = torch.from_numpy(logits.loc[train_idx,:].values).float()
-    train_targets = torch.from_numpy(targets.loc[train_idx,:].values.flatten()).long()
+    df_logits = pd.read_csv(logits, index_col=0, header=0)
+    df_targets = pd.read_csv(targets, index_col=0, header=0)
+    train_logits = torch.from_numpy(df_logits.loc[train_idx,:].values).float()
+    train_targets = torch.from_numpy(df_targets.loc[train_idx,:].values.flatten()).long()
     n_classes = train_logits.size(1)
     if score == "msp":
         selector = MSPSelector(n_classes, random_state=seed)
@@ -84,14 +86,15 @@ def main(
     selector.fit(train_logits, train_targets)
 
     # Run model on dataset with perturbation and temperature
-    model = load_img_classification_model(model, dataset, train_method, checkpoints_dir, seed)
-    dataset = load_cifar_dataset(dataset, train_method, data_dir)
     if temperature != 1.0 or input_perturbation != 0.0:
-        logits, targets = run_model_on_dataset(model, dataset, selector, input_perturbation, temperature, batch_size, device)
+        model = load_img_classification_model(model, dataset, train_method, checkpoints_dir, seed)
+        dataset = load_cifar_dataset(dataset, train_method, data_dir)
+        indices, logits, targets = run_model_on_dataset(model, dataset, selector, input_perturbation, temperature, batch_size, device)
         if train_method == "openmix":
             logits = logits[:, :-1]
     else:
-        logits, targets = torch.from_numpy(logits.values).float(), torch.from_numpy(targets.values.flatten()).long()
+        logits, targets = torch.from_numpy(df_logits.values).float(), torch.from_numpy(df_targets.values.flatten()).long()
+        indices = df_logits.index.values
     
     # Compute the scores with perturbed logits
     with torch.inference_mode():
@@ -99,9 +102,9 @@ def main(
 
     # Save results
     output_dir = Path(output_dir)
-    pd.DataFrame(logits.numpy().astype(float), columns=dataset.classes, index=np.arange(len(dataset))).to_csv(output_dir / "logits.csv", index=True, header=True)
-    pd.DataFrame(targets.numpy().astype(int), columns=["target"], index=np.arange(len(dataset))).to_csv(output_dir / "targets.csv", index=True, header=True)
-    pd.DataFrame(scores.numpy().astype(float), columns=["score"], index=np.arange(len(dataset))).to_csv(output_dir / "scores.csv", index=True, header=True)
+    pd.DataFrame(logits.numpy().astype(float), columns=df_logits.columns, index=indices).to_csv(output_dir / "logits.csv", index=True, header=True)
+    pd.DataFrame(targets.numpy().astype(int), columns=df_targets.columns, index=indices).to_csv(output_dir / "targets.csv", index=True, header=True)
+    pd.DataFrame(scores.numpy().astype(float), columns=["score"], index=indices).to_csv(output_dir / "scores.csv", index=True, header=True)
     save_yaml(selector.hparams, output_dir / "hparams.yaml")
     torch.save(selector.state_dict(), output_dir / "state_dict.pth")
 

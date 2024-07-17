@@ -39,8 +39,8 @@ class BaseCalibrator(nn.Module):
 
 class DPCalibrator(BaseCalibrator):
     
-    def __init__(self, n_classes):
-        super().__init__()
+    def __init__(self, n_classes, **kwargs):
+        super().__init__(**kwargs)
         self.n_classes = n_classes
         self.alpha = nn.Parameter(torch.tensor(1.0))
         self.beta = nn.Parameter(torch.zeros(n_classes))
@@ -51,8 +51,8 @@ class DPCalibrator(BaseCalibrator):
 
 class TSCalibrator(BaseCalibrator):
     
-    def __init__(self, n_classes):
-        super().__init__()
+    def __init__(self, n_classes, **kwargs):
+        super().__init__(**kwargs)
         self.n_classes = n_classes
         self.temp = nn.Parameter(torch.tensor(1.0))
 
