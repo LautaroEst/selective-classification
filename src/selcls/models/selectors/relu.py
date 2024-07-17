@@ -1,16 +1,16 @@
 
-from collections import OrderedDict
 import torch
-from torch.utils.data import DataLoader, TensorDataset
+from torch import nn
+from .base import BaseSelector
 
-class RelUSelector:
+class RelUSelector(BaseSelector):
 
-    def __init__(self, n_classes, lbd = 0.5, device = "cuda:0", random_state = None):
+    def __init__(self, n_classes, lbd = 0.5, random_state = None):
+        super().__init__()
         self.n_classes = n_classes
         self.lbd = lbd
-        self.device = torch.device(device)
         self.random_state = random_state
-        self.params = None
+        self.params = nn.Parameter(torch.eye(n_classes))
 
     def fit(self, train_logits, train_targets):
         train_pred = train_logits.argmax(dim=1)
@@ -21,18 +21,19 @@ class RelUSelector:
         train_probs_pos = train_probs[train_labels == 0]
         train_probs_neg = train_probs[train_labels == 1]
 
-        self.params = -(1 - self.lbd) * torch.einsum("ij,ik->ijk", train_probs_pos, train_probs_pos).mean(dim=0).to(
-            self.device
-        ) + self.lbd * torch.einsum("ij,ik->ijk", train_probs_neg, train_probs_neg).mean(dim=0).to(self.device)
-        self.params = torch.tril(self.params, diagonal=-1)
-        self.params = self.params + self.params.T
-        self.params = torch.relu(self.params)
-        if torch.all(self.params <= 0):
+        params = -(1 - self.lbd) * torch.einsum("ij,ik->ijk", train_probs_pos, train_probs_pos).mean(dim=0).to(
+            self.params.device
+        ) + self.lbd * torch.einsum("ij,ik->ijk", train_probs_neg, train_probs_neg).mean(dim=0).to(self.params.device)
+        params = torch.tril(params, diagonal=-1)
+        params = params + params.T
+        params = torch.relu(params)
+        if torch.all(params <= 0):
             # default to gini
-            self.params = torch.ones(self.params.size()).to(self.device)
-            self.params = torch.tril(self.params, diagonal=-1)
-            self.params = self.params + self.params.T
-        self.params = self.params / self.params.norm()
+            params = torch.ones(params.size()).to(self.params.device)
+            params = torch.tril(params, diagonal=-1)
+            params = params + params.T
+        params = params / params.norm()
+        self.params.data = params
 
     def compute_score(self, predict_logits):
         if self.params is None:
@@ -52,10 +53,4 @@ class RelUSelector:
         return {
             "lbd": self.lbd,
         }
-    
-    def state_dict(self):
-        return OrderedDict([("params", self.params.detach().cpu())])
-    
-    def load_state_dict(self, state_dict):
-        self.params = state_dict["params"].to(self.device)
     

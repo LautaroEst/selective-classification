@@ -1,11 +1,12 @@
 
 
-from collections import OrderedDict
 import torch
+from .base import BaseSelector
 
-class MSPSelector:
+class MSPSelector(BaseSelector):
 
     def __init__(self, n_classes, random_state = None):
+        super().__init__()
         self.n_classes = n_classes
         self.random_state = random_state
 
@@ -21,12 +22,3 @@ class MSPSelector:
     def compute_logprobs(self, predict_logits):
         return torch.log_softmax(predict_logits, dim=1)
     
-    @property
-    def hparams(self):
-        return {}
-
-    def state_dict(self):
-        return OrderedDict([])
-    
-    def load_state_dict(self, state_dict):
-        pass

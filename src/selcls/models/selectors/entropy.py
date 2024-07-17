@@ -1,9 +1,8 @@
 
-
-from collections import OrderedDict
 import torch
+from .base import BaseSelector
 
-class EntropySelector:
+class EntropySelector(BaseSelector):
 
     def __init__(self, n_classes, random_state = None):
         self.n_classes = n_classes
@@ -19,13 +18,3 @@ class EntropySelector:
     
     def compute_logprobs(self, predict_logits):
         return torch.log_softmax(predict_logits, dim=1)
-    
-    @property
-    def hparams(self):
-        return {}
-    
-    def state_dict(self):
-        return OrderedDict([])
-    
-    def load_state_dict(self, state_dict):
-        pass

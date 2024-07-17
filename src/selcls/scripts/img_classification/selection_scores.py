@@ -20,6 +20,7 @@ def run_model_on_dataset(model, dataset, selector, input_perturbation, temperatu
     
     device = torch.device(device)
     model = model.to(device)
+    selector = selector.to(device)
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
     logits, targets = [], []
     for x, y in tqdm(dataloader, total=len(dataloader)):
@@ -36,6 +37,8 @@ def run_model_on_dataset(model, dataset, selector, input_perturbation, temperatu
         targets.append(y.cpu())
     logits = torch.cat(logits, dim=0)
     targets = torch.cat(targets, dim=0)
+    model = model.cpu()
+    selector = selector.cpu()
     return logits, targets
 
 
@@ -71,11 +74,11 @@ def main(
     elif score == "gini":
         selector = GiniSelector(n_classes, random_state=seed)
     elif score == "relu":
-        selector = RelUSelector(n_classes, device="cpu", random_state=seed, **kwargs)
+        selector = RelUSelector(n_classes, random_state=seed, **kwargs)
     elif score == "mspcal-ts":
-        selector = MSPCalSelector("ts", n_classes, device="cpu", random_state=seed, **kwargs)
+        selector = MSPCalSelector("ts", n_classes, random_state=seed, **kwargs)
     elif score == "mspcal-dp":
-        selector = MSPCalSelector("dp", n_classes, device="cpu", random_state=seed, **kwargs)
+        selector = MSPCalSelector("dp", n_classes, random_state=seed, **kwargs)
     else:
         raise ValueError(f"Unknown score function: {score}")
     selector.fit(train_logits, train_targets)
@@ -89,7 +92,10 @@ def main(
             logits = logits[:, :-1]
     else:
         logits, targets = torch.from_numpy(logits.values).float(), torch.from_numpy(targets.values.flatten()).long()
-    scores = selector.compute_score(logits / temperature)
+    
+    with torch.inference_mode():
+        scores = selector.compute_score(logits / temperature)
+
 
     # Save results
     output_dir = Path(output_dir)

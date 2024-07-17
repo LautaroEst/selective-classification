@@ -3,16 +3,16 @@ from collections import OrderedDict
 from typing import Literal
 import torch
 from ..calibration import TSCalibrator, DPCalibrator
+from .base import BaseSelector
 
-class MSPCalSelector:
+class MSPCalSelector(BaseSelector):
 
-    def __init__(self, calibration: Literal["ts", "dp"] = "dp", n_classes: int = 10, device: str = "cuda:0", random_state = None, **kwargs):
+    def __init__(self, calibration: Literal["ts", "dp"] = "dp", n_classes: int = 10, random_state = None, **kwargs):
         
-        self.device = torch.device(device)
         if calibration == "ts":
-            self.calibrator = TSCalibrator(n_classes, **kwargs).to(self.device)
+            self.calibrator = TSCalibrator(n_classes, **kwargs)
         elif calibration == "dp":
-            self.calibrator = DPCalibrator(n_classes, **kwargs).to(self.device)
+            self.calibrator = DPCalibrator(n_classes, **kwargs)
         else:
             raise ValueError(f"Unknown calibration method: {calibration}")
 
@@ -40,10 +40,3 @@ class MSPCalSelector:
             "max_epochs": self.calibrator.max_epochs,
             "tol": self.calibrator.tol,
         }
-    
-    def state_dict(self):
-        return OrderedDict([(name, param.detach().cpu()) for name, param in self.calibrator.state_dict().items()])
-    
-    def load_state_dict(self, state_dict):
-        state_dict = OrderedDict([(name, param.to(self.device)) for name, param in state_dict.items()])
-        self.calibrator.load_state_dict(state_dict)
