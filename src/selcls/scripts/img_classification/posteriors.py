@@ -1,5 +1,3 @@
-from functools import partial
-from pathlib import Path
 from typing import Literal
 from tqdm import tqdm
 

@@ -2,9 +2,16 @@
 
 source env.sh
 
-datasets=(cifar10 cifar100)
-models=(resnet34 densenet121)
-train_methods=(ce logit_norm mixup openmix regmixup)
+# datasets=(cifar10 cifar100)
+# models=(resnet34 densenet121)
+# train_methods=(ce logit_norm mixup openmix regmixup)
+
+datasets=(cifar10)
+models=(resnet34)
+train_methods=(ce)
+
+device="cuda:0"
+batch_size=128
 
 for dataset in ${datasets[@]}; do
     for model in ${models[@]}; do
@@ -17,8 +24,8 @@ for dataset in ${datasets[@]}; do
                 if [ ! -f $logits_output ]; then
                     mkdir -p $output_dir
                     python -m selcls.scripts.img_classification.posteriors \
-                        --dataset $dataset \
                         --model $model \
+                        --dataset $dataset \
                         --train_method $train_method \
                         --data_dir $data_dir/${dataset}_data \
                         --checkpoints_dir $checkpoints_dir \
@@ -34,10 +41,11 @@ for dataset in ${datasets[@]}; do
 done
 
 
-perturbations=(0.001 0.004)
-temperatures=(0.5 2.0)
+perturbations=(0.0 0.001 0.004)
+temperatures=(1.0 0.5 2.0)
 scores=("msp" "entropy" "gini" "relu" "mspcal-ts" "mspcal-dp")
 lbd=0.5
+train_list="train"
 
 for eps in ${perturbations[@]}; do
     for temp in ${temperatures[@]}; do
@@ -47,16 +55,14 @@ for eps in ${perturbations[@]}; do
             else
                 kwargs=""
             fi
-            kwargs_name=$(echo $kwargs | sed 's/ --/_/g' | sed 's/ /=/g' | sed 's/--/_/g')
             for dataset in ${datasets[@]}; do
                 for model in ${models[@]}; do
                     for train_method in ${train_methods[@]}; do
                         for dir in $checkpoints_dir/$train_method/${model}_${dataset}/*; do
                             seed=$(basename $dir)
-                            output_dir="outputs/img_classification/$dataset/$model/$train_method/seed=$seed/eps=$eps/temp=$temp/score=$score"
-                            logits_output=$output_dir/logits$kwargs_name.csv 
-                            targets_output=$output_dir/targets$kwargs_name.csv
-                            if [ ! -f $logits_output ]; then
+                            posteriors_dir="outputs/img_classification/$dataset/$model/$train_method/seed=$seed"
+                            output_dir="$posteriors_dir/eps=$eps/temp=$temp/score=$score/train_list=$train_list"
+                            if [ ! -f $output_dir/logits.csv ]; then
                                 mkdir -p $output_dir
                                 python -m selcls.scripts.img_classification.selection_scores \
                                     --model $model \
@@ -65,14 +71,13 @@ for eps in ${perturbations[@]}; do
                                     --input_perturbation $eps \
                                     --temperature $temp \
                                     --score $score \
-                                    --logits "outputs/img_classification/$dataset/$model/$train_method/seed=$seed/logits.csv" \
-                                    --targets "outputs/img_classification/$dataset/$model/$train_method/seed=$seed/targets.csv" \
-                                    --train_list $lists_dir/train \
+                                    --logits "$posteriors_dir/logits.csv" \
+                                    --targets "$posteriors_dir/targets.csv" \
+                                    --train_list $lists_dir/$dataset/$train_list \
                                     --data_dir $data_dir/${dataset}_data \
                                     --checkpoints_dir $checkpoints_dir \
                                     --seed $seed \
-                                    --logits_output $logits_output \
-                                    --targets_output $targets_output \
+                                    --output_dir $output_dir \
                                     --device $device \
                                     --batch_size $batch_size \
                                     $kwargs

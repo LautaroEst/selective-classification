@@ -4,6 +4,13 @@ from torch import nn
 
 
 class BaseCalibrator(nn.Module):
+
+    def __init__(self, lr: float = 1e-2, max_ls: int = 100, max_epochs: int = 100, tol: float = 1e-6):
+        super().__init__()
+        self.lr = lr
+        self.max_ls = max_ls
+        self.max_epochs = max_epochs
+        self.tol = tol
     
     def calibrate(self, logprobs):
         self.eval()
@@ -14,7 +21,7 @@ class BaseCalibrator(nn.Module):
     def fit(self, logprobs, labels):
         self.train()
         criterion = nn.CrossEntropyLoss()
-        optimizer = torch.optim.LBFGS(self.parameters(), lr=1e-2, max_iter=100)
+        optimizer = torch.optim.LBFGS(self.parameters(), lr=self.lr, max_iter=self.max_ls)
 
         def closure():
             optimizer.zero_grad()
@@ -24,9 +31,9 @@ class BaseCalibrator(nn.Module):
             return loss
         
         last_loss = float("inf")
-        for epoch in range(100):
+        for epoch in range(self.max_epochs):
             loss = optimizer.step(closure)
-            if abs(last_loss - loss) < 1e-6:
+            if abs(last_loss - loss) < self.tol:
                 break
 
         return self
