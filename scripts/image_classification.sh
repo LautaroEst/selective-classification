@@ -2,13 +2,9 @@
 
 source env.sh
 
-# datasets=(cifar10 cifar100)
-# models=(resnet34 densenet121)
-# train_methods=(ce logit_norm mixup openmix regmixup)
-
-datasets=(cifar10)
-models=(resnet34)
-train_methods=(ce)
+datasets=(cifar10 cifar100)
+models=(resnet34 densenet121)
+train_methods=(ce logit_norm mixup openmix regmixup)
 
 device="cuda:0"
 batch_size=128
