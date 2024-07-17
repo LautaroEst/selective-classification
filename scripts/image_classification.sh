@@ -1,4 +1,6 @@
-#!/bin/bash -ex
+# #!/bin/bash -ex
+
+start=$(date +%s)
 
 source env.sh
 
@@ -92,3 +94,6 @@ for eps in ${perturbations[@]}; do
         done
     done
 done
+
+end=$(date +%s)
+echo "Time taken: $(($((end-start))/3600))h$(($(($((end-start))%3600))/60))m$(($((end-start))%60))s"
