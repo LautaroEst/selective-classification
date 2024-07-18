@@ -90,8 +90,6 @@ def main(
         model = load_img_classification_model(model, dataset, train_method, checkpoints_dir, seed)
         dataset = load_cifar_dataset(dataset, train_method, data_dir)
         indices, logits, targets = run_model_on_dataset(model, dataset, selector, input_perturbation, temperature, batch_size, device)
-        if train_method == "openmix":
-            logits = logits[:, :-1]
     else:
         logits, targets = torch.from_numpy(df_logits.values).float(), torch.from_numpy(df_targets.values.flatten()).long()
         indices = df_logits.index.values

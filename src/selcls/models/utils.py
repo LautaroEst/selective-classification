@@ -1,9 +1,21 @@
 from pathlib import Path
 
 import torch
+from torch import nn
 
 from .desenet import DenseNet121Small
 from .resnet import ResNet34
+
+class OpenMixModel(nn.Module):
+
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+    
+    def forward(self, x):
+        return self.model(x)[:, :-1]
+    
+
 
 def load_img_classification_model(model: str, dataset: str, train_method: str, checkpoints_dir: str, seed: int):
 
@@ -34,5 +46,7 @@ def load_img_classification_model(model: str, dataset: str, train_method: str, c
             model._modules[list(model._modules.keys())[-1]].out_features + 1,
         )
     model.load_state_dict(w)
+    if train_method == "openmix":
+        model = OpenMixModel(model)
 
     return model

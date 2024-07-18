@@ -4,7 +4,6 @@ from tqdm import tqdm
 import torch
 from torch.utils.data import DataLoader
 import pandas as pd
-import numpy as np
 
 from ...datasets import load_cifar_dataset
 from ...models.utils import load_img_classification_model
@@ -47,8 +46,6 @@ def main(
 
     # Run model on dataset
     indices, logits, targets = run_model_on_dataset(model, dataset, batch_size, device)
-    if train_method == "openmix":
-        logits = logits[:, :-1]
 
     # Save results
     logits = pd.DataFrame(logits, columns=dataset.classes, index=indices)
