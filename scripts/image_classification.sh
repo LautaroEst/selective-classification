@@ -97,3 +97,21 @@ done
 
 end=$(date +%s)
 echo "Time taken: $(($((end-start))/3600))h$(($(($((end-start))%3600))/60))m$(($((end-start))%60))s"
+
+# Compute results
+eps=0.0
+temp=1.0
+eval_set=test
+
+output_dir=outputs/img_classification/results/eps=$eps/temp=$temp
+test_lists=()
+for dataset in ${datasets[@]}; do
+    echo $dataset
+    test_lists+=(--test_list.$dataset $lists_dir/$dataset/$eval_set)
+done
+mkdir -p $output_dir
+python -m selcls.scripts.img_classification.base_results \
+    --output_dir $output_dir \
+    --eps $eps \
+    --temperature $temp \
+    ${test_lists[@]}
